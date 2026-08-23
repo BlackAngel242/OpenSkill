@@ -68,7 +68,7 @@ OpenSkill/
 │       └── openpua/SKILL.md
 │
 ├── test/
-├── registry.json               # Index généré (npx openskill validate . --fix)
+├── registry.json               # Index généré (npx @kxlsys/openskill validate . --fix)
 ├── package.json
 ├── CONTRIBUTING.md
 └── README.md
@@ -123,7 +123,7 @@ Lorsque l'utilisateur fournit un email :
 OpenSkill repère les assistants installés (marqueurs projet, dossiers personnels, binaires du PATH) :
 
 ```bash
-npx openskill detect
+npx @kxlsys/openskill detect
 ```
 
 ### Installer
@@ -131,13 +131,15 @@ npx openskill detect
 L'installation détecte vos assistants et vous propose les cibles. Les Skills sont converties au format de chacun :
 
 ```bash
-npx openskill add BlackAngel242/OpenSkill              # propose les cibles détectées
-npx openskill add BlackAngel242/OpenSkill --all --yes  # toutes les cibles, sans question
-npx openskill add BlackAngel242/OpenSkill --target claude-code,cursor
-npx openskill add BlackAngel242/OpenSkill --skill phishing-analysis
-npx openskill add BlackAngel242/OpenSkill --user       # installation globale
-npx openskill add ./mon-depot-local
+npx @kxlsys/openskill add BlackAngel242/OpenSkill              # propose les cibles détectées
+npx @kxlsys/openskill add BlackAngel242/OpenSkill --all --yes  # toutes les cibles, sans question
+npx @kxlsys/openskill add BlackAngel242/OpenSkill --target claude-code,cursor
+npx @kxlsys/openskill add BlackAngel242/OpenSkill --skill phishing-analysis
+npx @kxlsys/openskill add BlackAngel242/OpenSkill --user       # installation globale
+npx @kxlsys/openskill add ./mon-depot-local
 ```
+
+> **Nom du paquet** — le CLI est publié sous `@kxlsys/openskill`. Le nom court `openskill` appartient sur NPM à une librairie sans rapport (algorithme de classement bayésien) : `npx openskill` ne lance donc **pas** cet outil.
 
 ### Assistants supportés
 
@@ -165,9 +167,9 @@ Trois modes de pose :
 Chaque installation est enregistrée dans `.openskill.json`. Une seule commande met tout à jour, dans toutes les cibles :
 
 ```bash
-npx openskill update          # toutes les Skills installées
-npx openskill update --self   # + le CLI lui-même via NPM
-npx openskill update --self-only
+npx @kxlsys/openskill update          # toutes les Skills installées
+npx @kxlsys/openskill update --self   # + le CLI lui-même via NPM
+npx @kxlsys/openskill update --self-only
 ```
 
 La sortie indique ce qui a changé :
@@ -184,16 +186,16 @@ La sortie indique ce qui a changé :
 Lister les Skills disponibles :
 
 ```bash
-npx openskill list                      # dépôt officiel
-npx openskill list ./mon-depot-local
+npx @kxlsys/openskill list                      # dépôt officiel
+npx @kxlsys/openskill list ./mon-depot-local
 ```
 
 Rechercher une Skill par nom, description, catégorie, auteur ou tag (insensible à la casse et aux accents, tous les termes doivent correspondre) :
 
 ```bash
-npx openskill search kubernetes
-npx openskill search "audit active-directory"
-npx openskill search hardening --repo ./mon-depot-local
+npx @kxlsys/openskill search kubernetes
+npx @kxlsys/openskill search "audit active-directory"
+npx @kxlsys/openskill search hardening --repo ./mon-depot-local
 ```
 
 ### Vérifier
@@ -201,8 +203,8 @@ npx openskill search hardening --repo ./mon-depot-local
 Valider les Skills d'un dépôt (frontmatter, convention de nommage, cohérence de `registry.json`) :
 
 ```bash
-npx openskill validate .
-npx openskill validate . --fix          # régénère registry.json depuis les SKILL.md
+npx @kxlsys/openskill validate .
+npx @kxlsys/openskill validate . --fix          # régénère registry.json depuis les SKILL.md
 ```
 
 `validate` retourne un code de sortie non nul en cas d'erreur : il est utilisable tel quel en CI.
@@ -343,11 +345,12 @@ MIT License
 
 ### Phase 2
 - [x] Développement du CLI OpenSkill
-- [ ] Publication sur NPM
+- [x] Préparation de la publication NPM (paquet `@kxlsys/openskill`)
+- [ ] Première publication sur NPM
 - [x] Support GitHub Repository Import
 
 ### Phase 3
-- [ ] Installation via NPX (package global) — bloquée : le nom `openskill` est pris sur NPM
+- [x] Installation via NPX (nom scopé `@kxlsys/openskill`)
 - [x] Recherche de Skills (`openskill search`)
 - [x] Mise à jour automatique (`openskill update`)
 - [x] Vérification des Skills (`openskill validate`)
@@ -356,7 +359,7 @@ MIT License
 - [x] Détection automatique des assistants IA (`openskill detect`)
 - [x] Installation multi-assistants avec conversion de format
 - [x] Mise à jour groupée des Skills et du CLI
-- [ ] Publication du CLI sous un nom NPM disponible
+- [ ] Publication du CLI sur NPM (`npm run release`)
 
 ---
 

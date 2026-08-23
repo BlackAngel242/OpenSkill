@@ -1,5 +1,5 @@
 {
-  "name": "openskill",
+  "name": "@kxlsys/openskill",
   "version": "2.0.0",
   "description": "CLI to install, update, search and validate AI agent skills across Claude Code, Cursor, Copilot and more",
   "main": "bin/index.js",
@@ -9,7 +9,8 @@
   },
   "scripts": {
     "test": "node test/test.js && node test/test-quality.js && node test/test-targets.js",
-    "validate": "node bin/index.js validate ."
+    "validate": "node bin/index.js validate .",
+    "release": "npm publish --access public"
   },
   "keywords": [
     "ai",
@@ -42,5 +43,8 @@
   "bugs": {
     "url": "https://github.com/BlackAngel242/OpenSkill/issues"
   },
-  "homepage": "https://github.com/BlackAngel242/OpenSkill#readme"
+  "homepage": "https://github.com/BlackAngel242/OpenSkill#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }

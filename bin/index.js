@@ -22,7 +22,7 @@ function printHelp() {
 ${colors.bright}${colors.cyan}🚀 OpenSkill CLI${colors.reset} - Installez des compétences pour vos agents IA
 
 ${colors.bright}USAGE:${colors.reset}
-  npx openskill <commande> [options]
+  npx @kxlsys/openskill <commande> [options]
 
 ${colors.bright}COMMANDES:${colors.reset}
   add <repository>        Installe les compétences dans vos assistants IA
@@ -52,13 +52,13 @@ ${colors.bright}CIBLES SUPPORTÉES:${colors.reset}
 ${TARGETS.map(t => `  ${t.id.padEnd(14)} ${t.name.padEnd(24)} ${colors.dim}${t.describe}${colors.reset}`).join('\n')}
 
 ${colors.bright}EXEMPLES:${colors.reset}
-  npx openskill detect
-  npx openskill add ${DEFAULT_REPO}
-  npx openskill add ${DEFAULT_REPO} --all --yes
-  npx openskill add ${DEFAULT_REPO} --target claude-code,cursor
-  npx openskill update --self
-  npx openskill search kubernetes
-  npx openskill validate . --fix
+  npx @kxlsys/openskill detect
+  npx @kxlsys/openskill add ${DEFAULT_REPO}
+  npx @kxlsys/openskill add ${DEFAULT_REPO} --all --yes
+  npx @kxlsys/openskill add ${DEFAULT_REPO} --target claude-code,cursor
+  npx @kxlsys/openskill update --self
+  npx @kxlsys/openskill search kubernetes
+  npx @kxlsys/openskill validate . --fix
 `);
 }
 

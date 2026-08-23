@@ -133,7 +133,20 @@ Décrivez dans la PR :
 
 ---
 
-## 6. Contribuer au CLI
+## 6. Publier le CLI
+
+Le paquet est scopé : la publication publique doit être explicite.
+
+```bash
+npm test && npm run validate
+npm run release           # npm publish --access public
+```
+
+Le nom court `openskill` est occupé sur NPM par une librairie sans rapport. Ne le réutilisez pas : `openskill-cli` et `openskills` sont également pris.
+
+---
+
+## 7. Contribuer au CLI
 
 Le code source est organisé ainsi :
 
