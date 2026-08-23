@@ -1,46 +1,105 @@
 {
   "skills": [
     {
-      "name": "phishing-analysis",
-      "category": "cybersecurity",
-      "path": "skills/cybersecurity/phishing-analysis/SKILL.md",
-      "author": "OpenSkill Community"
-    },
-    {
       "name": "ad-audit",
       "category": "cybersecurity",
       "path": "skills/cybersecurity/ad-audit/SKILL.md",
-      "author": "OpenSkill Community"
+      "author": "KxlSys",
+      "version": "1.0.0",
+      "description": "Méthodologie d'audit de sécurité Active Directory.",
+      "tags": [
+        "cybersecurity",
+        "active-directory",
+        "audit"
+      ]
     },
     {
       "name": "devsecops-complete-audit",
       "category": "cybersecurity",
       "path": "skills/cybersecurity/devsecops-complete-audit/SKILL.md",
-      "author": "OpenSkill Community"
-    },
-    {
-      "name": "linux-hardening",
-      "category": "sysadmin",
-      "path": "skills/sysadmin/linux-hardening/SKILL.md",
-      "author": "OpenSkill Community"
+      "author": "KxlSys",
+      "version": "1.0.0",
+      "description": "Audit professionnel complet d'un projet logiciel couvrant architecture, code mort, dette technique, dépendances, API, authentification, autorisation, sécurité applicative, CI/CD, performance, production et validation finale.",
+      "tags": [
+        "cybersecurity",
+        "devsecops",
+        "audit",
+        "security",
+        "code-quality",
+        "technical-debt",
+        "production",
+        "architecture"
+      ]
     },
     {
       "name": "kubernetes-review",
       "category": "devops",
       "path": "skills/devops/kubernetes-review/SKILL.md",
-      "author": "OpenSkill Community"
+      "author": "KxlSys",
+      "version": "1.0.0",
+      "description": "Analyse et revue de sécurité de manifests Kubernetes.",
+      "tags": [
+        "devops",
+        "kubernetes",
+        "review",
+        "yaml"
+      ]
     },
     {
-      "name": "prompt-engineering",
-      "category": "ai",
-      "path": "skills/ai/prompt-engineering/SKILL.md",
-      "author": "OpenSkill Community"
+      "name": "linux-hardening",
+      "category": "sysadmin",
+      "path": "skills/sysadmin/linux-hardening/SKILL.md",
+      "author": "KxlSys",
+      "version": "1.0.0",
+      "description": "Procédure de durcissement et sécurisation d'un serveur Linux.",
+      "tags": [
+        "sysadmin",
+        "linux",
+        "security",
+        "hardening"
+      ]
     },
     {
       "name": "openpua",
       "category": "ai",
       "path": "skills/ai/openpua/SKILL.md",
-      "author": "OpenSkill Community"
+      "author": "OpenSkill Community",
+      "version": "1.0.0",
+      "description": "Improve debugging persistence and reasoning quality.",
+      "tags": [
+        "debugging",
+        "ai-agents",
+        "claude-code",
+        "codex",
+        "cursor",
+        "troubleshooting",
+        "productivity"
+      ]
+    },
+    {
+      "name": "phishing-analysis",
+      "category": "cybersecurity",
+      "path": "skills/cybersecurity/phishing-analysis/SKILL.md",
+      "author": "KxlSys",
+      "version": "1.0.0",
+      "description": "Analyse complète d'un email suspect.",
+      "tags": [
+        "cybersecurity",
+        "phishing"
+      ]
+    },
+    {
+      "name": "prompt-engineering",
+      "category": "ai",
+      "path": "skills/ai/prompt-engineering/SKILL.md",
+      "author": "KxlSys",
+      "version": "1.0.0",
+      "description": "Méthodologie d'optimisation et d'ingénierie de prompts.",
+      "tags": [
+        "ai",
+        "prompt-engineering",
+        "prompt"
+      ]
     }
   ]
 }

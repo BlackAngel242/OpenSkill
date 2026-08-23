@@ -29,34 +29,38 @@ Une Skill peut représenter :
 ```text
 OpenSkill/
 │
+├── bin/
+│   └── index.js                # CLI (add, list, search, validate)
+│
+├── src/
+│   ├── catalog.js              # Découverte des Skills (registre puis scan)
+│   ├── colors.js
+│   ├── frontmatter.js          # Analyse du frontmatter YAML
+│   ├── installer.js            # Installation dans .agents/skills/
+│   ├── search.js               # Listing et recherche
+│   ├── source.js               # Résolution et clonage des dépôts
+│   └── validator.js            # Vérification des Skills et du registre
+│
 ├── skills/
 │   ├── cybersecurity/
-│   │   ├── phishing-analysis/
-│   │   │   └── SKILL.md
-│   │   │
-│   │   ├── ad-audit/
-│   │   │   └── SKILL.md
-│   │   │
-│   │   └── devsecops-complete-audit/
-│   │       └── SKILL.md
+│   │   ├── phishing-analysis/SKILL.md
+│   │   ├── ad-audit/SKILL.md
+│   │   └── devsecops-complete-audit/SKILL.md
 │   │
 │   ├── sysadmin/
-│   │   └── linux-hardening/
-│   │       └── SKILL.md
+│   │   └── linux-hardening/SKILL.md
 │   │
 │   ├── devops/
-│   │   └── kubernetes-review/
-│   │       └── SKILL.md
+│   │   └── kubernetes-review/SKILL.md
 │   │
 │   └── ai/
-│       ├── prompt-engineering/
-│       │   └── SKILL.md
-│       │
-│       └── openpua/
-│           └── SKILL.md
+│       ├── prompt-engineering/SKILL.md
+│       └── openpua/SKILL.md
 │
-├── registry.json
+├── test/
+├── registry.json               # Index généré (npx openskill validate . --fix)
 ├── package.json
+├── CONTRIBUTING.md
 └── README.md
 ```
 
@@ -64,10 +68,12 @@ OpenSkill/
 
 ## 📖 Exemple de Skill
 
+Tous les champs ci-dessous sont obligatoires et vérifiés par `openskill validate` :
+
 ```yaml
 ---
 name: phishing-analysis
-author: Black Angel
+author: KxlSys
 version: 1.0.0
 tags:
   - cybersecurity
@@ -100,25 +106,80 @@ Lorsque l'utilisateur fournit un email :
 
 ---
 
-## 📦 Installation
+## 📦 Utilisation du CLI
+
+### Installer
 
 Installer l'ensemble du dépôt :
 
 ```bash
-npx openskill add KxlSys/OpenSkill
+npx openskill add BlackAngel242/OpenSkill
 ```
 
 Installer une Skill spécifique :
 
 ```bash
-npx openskill add KxlSys/OpenSkill --skill phishing-analysis
+npx openskill add BlackAngel242/OpenSkill --skill phishing-analysis
 ```
+
+Installer depuis un dépôt local :
+
+```bash
+npx openskill add ./mon-depot-local
+```
+
+Les Skills sont copiées dans `.agents/skills/<nom>/` du répertoire courant.
+
+### Explorer
+
+Lister les Skills disponibles :
+
+```bash
+npx openskill list                      # dépôt officiel
+npx openskill list ./mon-depot-local
+```
+
+Rechercher une Skill par nom, description, catégorie, auteur ou tag (insensible à la casse et aux accents, tous les termes doivent correspondre) :
+
+```bash
+npx openskill search kubernetes
+npx openskill search "audit active-directory"
+npx openskill search hardening --repo ./mon-depot-local
+```
+
+### Vérifier
+
+Valider les Skills d'un dépôt (frontmatter, convention de nommage, cohérence de `registry.json`) :
+
+```bash
+npx openskill validate .
+npx openskill validate . --fix          # régénère registry.json depuis les SKILL.md
+```
+
+`validate` retourne un code de sortie non nul en cas d'erreur : il est utilisable tel quel en CI.
+
+### Référence des commandes
+
+| Commande | Description |
+| --- | --- |
+| `add <repository>` | Installe les Skills dans `.agents/skills/` |
+| `list [repository]` | Liste les Skills d'un dépôt |
+| `search <requête>` | Recherche une Skill |
+| `validate [chemin]` | Vérifie les Skills et le registre |
+
+| Option | Commande | Description |
+| --- | --- | --- |
+| `-s, --skill <name>` | `add` | Installe une seule Skill |
+| `-r, --repo <repository>` | `search` | Dépôt à interroger |
+| `--fix` | `validate` | Régénère `registry.json` |
+| `-h, --help` | — | Affiche l'aide |
+| `-v, --version` | — | Affiche la version |
 
 ---
 
 ## 🤝 Contribution
 
-Les contributions sont les bienvenues.
+Les contributions sont les bienvenues. Le guide complet se trouve dans [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ### Étapes
 
@@ -132,18 +193,26 @@ git checkout -b add-new-skill
 3. Ajouter votre Skill
 
 ```text
-category/
-└── skill-name/
-    └── SKILL.md
+skills/
+└── category/
+    └── skill-name/
+        └── SKILL.md
 ```
 
-4. Commit
+4. Régénérer le registre et vérifier
+
+```bash
+npm run validate -- --fix
+npm test
+```
+
+5. Commit
 
 ```bash
 git commit -m "feat: add new skill"
 ```
 
-5. Ouvrir une Pull Request
+6. Ouvrir une Pull Request
 
 ---
 
@@ -223,9 +292,9 @@ MIT License
 
 ### Phase 3
 - [ ] Installation via NPX (package global)
-- [ ] Recherche de Skills
+- [x] Recherche de Skills (`openskill search`)
 - [ ] Mise à jour automatique
-- [ ] Vérification des Skills
+- [x] Vérification des Skills (`openskill validate`)
 
 ---
 
