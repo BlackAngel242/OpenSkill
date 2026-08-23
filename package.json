@@ -1,14 +1,14 @@
 {
   "name": "openskill",
-  "version": "1.1.0",
-  "description": "CLI to install, search and validate AI agent skills from OpenSkill repositories",
+  "version": "2.0.0",
+  "description": "CLI to install, update, search and validate AI agent skills across Claude Code, Cursor, Copilot and more",
   "main": "bin/index.js",
   "type": "commonjs",
   "bin": {
     "openskill": "./bin/index.js"
   },
   "scripts": {
-    "test": "node test/test.js && node test/test-quality.js",
+    "test": "node test/test.js && node test/test-quality.js && node test/test-targets.js",
     "validate": "node bin/index.js validate ."
   },
   "keywords": [
@@ -16,7 +16,11 @@
     "agent",
     "skills",
     "openskill",
-    "openskills",
+    "claude-code",
+    "cursor",
+    "copilot",
+    "windsurf",
+    "cline",
     "prompt",
     "cli"
   ],

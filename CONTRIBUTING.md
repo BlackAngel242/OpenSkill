@@ -34,6 +34,19 @@ skills/
 
 Le nom du dossier **doit** être identique au champ `name` du frontmatter.
 
+Une Skill peut embarquer des fichiers annexes (références, gabarits, assets) :
+
+```text
+skills/business/prd-table-ronde/
+├── SKILL.md
+├── references/
+│   └── personas.md
+└── assets/
+    └── design-system.css
+```
+
+Sur les assistants qui rangent les Skills en dossiers (Claude Code, générique), l'arborescence est copiée telle quelle. Sur ceux qui attendent un fichier de règles unique (Cursor, Copilot, Cline…), les fichiers annexes sont conservés dans `.agents/skills/<nom>/` et cités dans le fichier généré.
+
 ### Convention de nommage
 
 Uniquement des minuscules, des chiffres et des tirets simples :
@@ -58,6 +71,15 @@ tags:                       # au moins un tag
   - categorie
   - mot-cle
 ---
+```
+
+La description sert aussi de condition de déclenchement pour les agents : dites ce que fait la Skill **et** quand l'utiliser. Elle peut être longue, auquel cas un scalaire YAML replié est accepté :
+
+```yaml
+description: >
+  Transforme un brief client en PRD constructible. À utiliser pour un cahier
+  des charges, un blueprint produit ou un audit d'application. Ne pas
+  l'utiliser pour une question technique ponctuelle.
 ```
 
 Le champ optionnel `category` peut être ajouté ; sinon la catégorie est déduite du dossier parent.
@@ -121,13 +143,28 @@ Le code source est organisé ainsi :
 | `src/source.js` | Résolution d'un dépôt (local, GitHub, URL Git) et clonage |
 | `src/catalog.js` | Découverte des Skills (registre puis scan) |
 | `src/frontmatter.js` | Analyse du frontmatter YAML, sans dépendance |
+| `src/targets.js` | Assistants IA : détection, destinations, conversion de format |
+| `src/manifest.js` | `.openskill.json` : suivi des installations |
+| `src/updater.js` | Mise à jour des Skills et du CLI |
+| `src/prompt.js` | Sélection interactive des cibles |
 | `src/search.js` | Listing et recherche |
 | `src/validator.js` | Vérification des Skills et du registre |
-| `src/installer.js` | Copie vers `.agents/skills/` |
+| `src/installer.js` | Installation dans les assistants choisis |
+
+### Ajouter un assistant IA
+
+Un assistant se décrit par une entrée dans `TARGETS` (`src/targets.js`) :
+
+- `markers` : indices de détection (fichiers/dossiers du projet, dossiers personnels, binaires du PATH) ;
+- `layout` : `directory`, `file` ou `managed-block` ;
+- `render` : conversion du `SKILL.md` vers le format attendu (cibles `file` uniquement).
+
+N'ajoutez que des conventions réellement lues par l'outil : un fichier écrit au mauvais endroit n'est jamais chargé, et donne l'illusion d'une installation réussie.
 
 Deux règles à respecter :
 
 1. **Zéro dépendance runtime** — le CLI doit rester exécutable via `npx` sans installation.
-2. **Entrées non fiables** — les noms de Skill et les chemins du registre proviennent de dépôts tiers. Toute nouvelle écriture sur disque doit valider le nom (`isValidSkillName`) et vérifier le confinement du chemin de destination.
+2. **Entrées non fiables** — les noms de Skill et les chemins du registre proviennent de dépôts tiers. Toute nouvelle écriture sur disque doit valider le nom (`isValidSkillName`) et vérifier le confinement du chemin de destination (`assertContained`).
+3. **Jamais d'installation aveugle** — toute commande susceptible d'exécuter du code tiers (`npm install -g`) doit d'abord vérifier l'identité du paquet.
 
 Toute modification du CLI doit être accompagnée d'un test dans `test/`.

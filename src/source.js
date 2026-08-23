@@ -42,6 +42,11 @@ function resolveSource(repo, { onProgress = () => {} } = {}) {
   const details = getRepoDetails(repo);
 
   if (details.type === 'local') {
+    // Un chemin disparu doit échouer franchement : sans ce contrôle, une
+    // mise à jour signalerait « aucune compétence » au lieu de l'absence.
+    if (!fs.existsSync(details.url)) {
+      throw new Error(`Chemin local introuvable : "${details.url}".`);
+    }
     onProgress(`local:${details.url}`);
     return { ...details, sourceDir: details.url, cleanup: () => {} };
   }

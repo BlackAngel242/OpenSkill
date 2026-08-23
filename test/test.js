@@ -73,8 +73,9 @@ try {
 try {
   const skills = scanDirectoryForSkills(path.resolve('.'));
   
-  // We expect to find 7 skills: phishing-analysis, ad-audit, linux-hardening, kubernetes-review, devsecops-complete-audit, prompt-engineering, openpua
-  assert.strictEqual(skills.length, 7);
+  // 8 skills attendues: phishing-analysis, ad-audit, linux-hardening, kubernetes-review,
+  // devsecops-complete-audit, prompt-engineering, openpua, prd-table-ronde
+  assert.strictEqual(skills.length, 8);
   
   const phishing = skills.find(s => s.name === 'phishing-analysis');
   assert.ok(phishing);
@@ -97,6 +98,9 @@ try {
 
   const openpua = skills.find(s => s.name === 'openpua');
   assert.ok(openpua);
+
+  const prd = skills.find(s => s.name === 'prd-table-ronde');
+  assert.ok(prd);
 
   console.log('✅ Test 3: scanDirectoryForSkills passed!');
 } catch (err) {
@@ -121,7 +125,7 @@ try {
   const srcWorkspace = path.resolve(__dirname, '..');
   
   // Run installation
-  install(srcWorkspace).then(() => {
+  install(srcWorkspace, { targets: ['agents'] }).then(() => {
     // Check if skills are installed
     const installedPhishing = path.join(testDest, '.agents', 'skills', 'phishing-analysis', 'SKILL.md');
     assert.ok(fs.existsSync(installedPhishing));
@@ -164,7 +168,7 @@ function runTest5() {
 
     const srcWorkspace = path.resolve(__dirname, '..');
 
-    install(srcWorkspace, { skill: 'devsecops-complete-audit' }).then(() => {
+    install(srcWorkspace, { skill: 'devsecops-complete-audit', targets: ['agents'] }).then(() => {
       // Check that only devsecops-complete-audit is installed
       const installedDevSecOps = path.join(testDest, '.agents', 'skills', 'devsecops-complete-audit', 'SKILL.md');
       assert.ok(fs.existsSync(installedDevSecOps));
@@ -197,7 +201,7 @@ function runTest6() {
 
   const srcWorkspace = path.resolve(__dirname, '..');
 
-  install(srcWorkspace, { skill: '../../etc/passwd' }).then(() => {
+  install(srcWorkspace, { skill: '../../etc/passwd', targets: ['agents'] }).then(() => {
     console.error('❌ Test 6: Should have rejected path traversal skill name!');
     process.exit(1);
   }).catch(err => {
@@ -233,7 +237,7 @@ function runTest7() {
       fs.rmSync(testDest, { recursive: true, force: true });
     }
     
-    install(tempWorkspace).then(() => {
+    install(tempWorkspace, { targets: ['agents'] }).then(() => {
       // Check that skills are still installed via scan fallback
       const installedPhishing = path.join(testDest, '.agents', 'skills', 'phishing-analysis', 'SKILL.md');
       assert.ok(fs.existsSync(installedPhishing));

@@ -36,9 +36,13 @@ OpenSkill/
 │   ├── catalog.js              # Découverte des Skills (registre puis scan)
 │   ├── colors.js
 │   ├── frontmatter.js          # Analyse du frontmatter YAML
-│   ├── installer.js            # Installation dans .agents/skills/
+│   ├── installer.js            # Installation multi-assistants
+│   ├── manifest.js             # .openskill.json (suivi des installations)
+│   ├── prompt.js               # Sélection interactive des cibles
 │   ├── search.js               # Listing et recherche
 │   ├── source.js               # Résolution et clonage des dépôts
+│   ├── targets.js              # Assistants IA : détection et formats
+│   ├── updater.js              # Mise à jour des Skills et du CLI
 │   └── validator.js            # Vérification des Skills et du registre
 │
 ├── skills/
@@ -52,6 +56,12 @@ OpenSkill/
 │   │
 │   ├── devops/
 │   │   └── kubernetes-review/SKILL.md
+│   │
+│   ├── business/
+│   │   └── prd-table-ronde/    # Skill multi-fichiers (references/, assets/)
+│   │       ├── SKILL.md
+│   │       ├── references/
+│   │       └── assets/
 │   │
 │   └── ai/
 │       ├── prompt-engineering/SKILL.md
@@ -108,27 +118,66 @@ Lorsque l'utilisateur fournit un email :
 
 ## 📦 Utilisation du CLI
 
+### Détecter vos assistants IA
+
+OpenSkill repère les assistants installés (marqueurs projet, dossiers personnels, binaires du PATH) :
+
+```bash
+npx openskill detect
+```
+
 ### Installer
 
-Installer l'ensemble du dépôt :
+L'installation détecte vos assistants et vous propose les cibles. Les Skills sont converties au format de chacun :
 
 ```bash
-npx openskill add BlackAngel242/OpenSkill
-```
-
-Installer une Skill spécifique :
-
-```bash
+npx openskill add BlackAngel242/OpenSkill              # propose les cibles détectées
+npx openskill add BlackAngel242/OpenSkill --all --yes  # toutes les cibles, sans question
+npx openskill add BlackAngel242/OpenSkill --target claude-code,cursor
 npx openskill add BlackAngel242/OpenSkill --skill phishing-analysis
-```
-
-Installer depuis un dépôt local :
-
-```bash
+npx openskill add BlackAngel242/OpenSkill --user       # installation globale
 npx openskill add ./mon-depot-local
 ```
 
-Les Skills sont copiées dans `.agents/skills/<nom>/` du répertoire courant.
+### Assistants supportés
+
+| Cible | Assistant | Destination |
+| --- | --- | --- |
+| `claude-code` | Claude Code | `.claude/skills/<nom>/SKILL.md` |
+| `cursor` | Cursor | `.cursor/rules/<nom>.mdc` |
+| `windsurf` | Windsurf | `.windsurf/rules/<nom>.md` |
+| `copilot` | GitHub Copilot | `.github/instructions/<nom>.instructions.md` |
+| `cline` | Cline | `.clinerules/<nom>.md` |
+| `continue` | Continue | `.continue/rules/<nom>.md` |
+| `codex` | Codex | `AGENTS.md` (bloc géré) + `.agents/skills/` |
+| `gemini` | Gemini CLI | `GEMINI.md` (bloc géré) + `.agents/skills/` |
+| `aider` | Aider | `CONVENTIONS.md` (bloc géré) + `.agents/skills/` |
+| `agents` | Générique | `.agents/skills/<nom>/` |
+
+Trois modes de pose :
+
+- **Dossier** — le dossier de la Skill est copié tel quel, fichiers annexes compris.
+- **Fichier** — un fichier de règles est généré au format de l'assistant. Si la Skill embarque des références ou des gabarits, ils sont conservés dans `.agents/skills/<nom>/` et cités dans le fichier généré.
+- **Bloc géré** — un bloc délimité `<!-- BEGIN OPENSKILL -->` … `<!-- END OPENSKILL -->` est inséré dans le fichier de contexte racine. Le reste du fichier n'est jamais modifié, et une réinstallation remplace le bloc au lieu de l'empiler.
+
+### Mettre à jour
+
+Chaque installation est enregistrée dans `.openskill.json`. Une seule commande met tout à jour, dans toutes les cibles :
+
+```bash
+npx openskill update          # toutes les Skills installées
+npx openskill update --self   # + le CLI lui-même via NPM
+npx openskill update --self-only
+```
+
+La sortie indique ce qui a changé :
+
+```text
+🔄 Mise à jour de BlackAngel242/OpenSkill (project, cibles : claude-code, cursor)
+  = ad-audit v1.0.0
+  ↑ kubernetes-review v1.0.0 → v1.4.0
+  + prd-table-ronde (nouvelle, v2.1.1)
+```
 
 ### Explorer
 
@@ -162,7 +211,9 @@ npx openskill validate . --fix          # régénère registry.json depuis les S
 
 | Commande | Description |
 | --- | --- |
-| `add <repository>` | Installe les Skills dans `.agents/skills/` |
+| `add <repository>` | Installe les Skills dans les assistants détectés |
+| `detect` | Liste les assistants IA détectés |
+| `update` | Met à jour toutes les Skills installées |
 | `list [repository]` | Liste les Skills d'un dépôt |
 | `search <requête>` | Recherche une Skill |
 | `validate [chemin]` | Vérifie les Skills et le registre |
@@ -170,6 +221,11 @@ npx openskill validate . --fix          # régénère registry.json depuis les S
 | Option | Commande | Description |
 | --- | --- | --- |
 | `-s, --skill <name>` | `add` | Installe une seule Skill |
+| `-t, --target <ids>` | `add` | Cibles séparées par des virgules |
+| `--all` | `add` | Toutes les cibles détectées |
+| `--user` | `add`, `update` | Portée globale au lieu du projet |
+| `-y, --yes` | `add`, `update` | Aucune question |
+| `--self` / `--self-only` | `update` | Met aussi/uniquement à jour le CLI |
 | `-r, --repo <repository>` | `search` | Dépôt à interroger |
 | `--fix` | `validate` | Régénère `registry.json` |
 | `-h, --help` | — | Affiche l'aide |
@@ -291,10 +347,16 @@ MIT License
 - [x] Support GitHub Repository Import
 
 ### Phase 3
-- [ ] Installation via NPX (package global)
+- [ ] Installation via NPX (package global) — bloquée : le nom `openskill` est pris sur NPM
 - [x] Recherche de Skills (`openskill search`)
-- [ ] Mise à jour automatique
+- [x] Mise à jour automatique (`openskill update`)
 - [x] Vérification des Skills (`openskill validate`)
+
+### Phase 4
+- [x] Détection automatique des assistants IA (`openskill detect`)
+- [x] Installation multi-assistants avec conversion de format
+- [x] Mise à jour groupée des Skills et du CLI
+- [ ] Publication du CLI sous un nom NPM disponible
 
 ---
 

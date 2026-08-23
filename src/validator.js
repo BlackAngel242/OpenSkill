@@ -61,7 +61,9 @@ function validateSkill(skill, root) {
     errors.push(`${location} : "tags" doit être une liste YAML.`);
   }
 
-  if (meta.description && meta.description.length > 300) {
+  // La description sert aussi de condition de déclenchement pour les agents :
+  // elle est légitimement longue. Le seuil marque l'excès, pas le détail.
+  if (meta.description && meta.description.length > 1024) {
     warnings.push(`${location} : description très longue (${meta.description.length} caractères).`);
   }
 

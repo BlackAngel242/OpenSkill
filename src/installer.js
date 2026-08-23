@@ -1,16 +1,141 @@
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 const colors = require('./colors');
 const { getRepoDetails, resolveSource } = require('./source');
+const { isValidSkillName, scanDirectoryForSkills, collectSkills, readSkillMetadata } = require('./catalog');
 const {
-  isValidSkillName,
-  scanDirectoryForSkills,
-  collectSkills
-} = require('./catalog');
+  detectTargets,
+  resolveInstallTargets,
+  getTarget,
+  destinationFor,
+  listCompanions,
+  renderSkillFile,
+  writeManagedBlock
+} = require('./targets');
+const { recordInstall } = require('./manifest');
+const { isInteractive, multiSelect } = require('./prompt');
 
+/**
+ * Vérifie qu'une destination reste sous la racine autorisée.
+ * Le nom de Skill est déjà validé en amont ; ce contrôle est la dernière
+ * barrière contre un path traversal.
+ */
+function assertContained(destination, baseRoot, skillName) {
+  const resolvedBase = path.resolve(baseRoot);
+  if (!destination.startsWith(resolvedBase + path.sep)) {
+    throw new Error(`Tentative de path traversal détectée pour la compétence : "${skillName}"`);
+  }
+}
+
+/**
+ * Installe une Skill dans une cible, selon la disposition de celle-ci.
+ * @returns {string} chemin écrit
+ */
+function installSkillTo(skill, detection, { cwd, home, user }) {
+  const target = detection.target;
+  const meta = readSkillMetadata(skill);
+  const baseRoot = user ? home : cwd;
+  const destination = destinationFor(target, skill.name, { cwd, home, user });
+
+  if (!destination) {
+    throw new Error(`La cible "${target.id}" n'a pas de destination pour la portée demandée.`);
+  }
+  assertContained(destination, baseRoot, skill.name);
+
+  if (target.layout === 'file') {
+    // Une cible « fichier » ne peut contenir qu'un document. Si la Skill
+    // embarque des références ou des gabarits, ils sont conservés dans
+    // .agents/skills/ et cités dans le rendu, sinon la Skill installée
+    // pointerait vers des fichiers absents.
+    const companions = listCompanions(skill.path);
+    let companionDir = null;
+
+    if (companions.length > 0) {
+      const companionPath = path.resolve(baseRoot, '.agents', 'skills', skill.name);
+      assertContained(companionPath, baseRoot, skill.name);
+
+      if (fs.existsSync(companionPath)) {
+        fs.rmSync(companionPath, { recursive: true, force: true });
+      }
+      fs.mkdirSync(companionPath, { recursive: true });
+      fs.cpSync(skill.path, companionPath, { recursive: true });
+      companionDir = path.join('.agents', 'skills', skill.name).split(path.sep).join('/');
+    }
+
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    fs.writeFileSync(destination, renderSkillFile(target, skill.skillMdPath, meta, { companionDir }), 'utf8');
+    return destination;
+  }
+
+  // `directory` et `managed-block` copient le dossier complet de la Skill,
+  // ce qui préserve les fichiers annexes (scripts, gabarits, références).
+  if (fs.existsSync(destination)) {
+    fs.rmSync(destination, { recursive: true, force: true });
+  }
+  fs.mkdirSync(destination, { recursive: true });
+  fs.cpSync(skill.path, destination, { recursive: true });
+  return destination;
+}
+
+/**
+ * Choisit les cibles d'installation : option explicite, sélection
+ * interactive, ou repli automatique sur les cibles détectées.
+ */
+async function chooseTargets(options, { cwd, home }) {
+  const detections = detectTargets({ cwd, home, checkPath: options.checkPath !== false });
+
+  if (options.targets && options.targets.length > 0) {
+    return options.targets.map(id => {
+      const found = detections.find(d => d.target.id === id);
+      if (!found) {
+        const available = detections.map(d => d.target.id).join(', ');
+        throw new Error(`Cible inconnue : "${id}". Cibles disponibles : ${available}.`);
+      }
+      return found;
+    });
+  }
+
+  if (options.all) {
+    const detected = detections.filter(d => d.detected);
+    return detected.length > 0 ? detected : resolveInstallTargets(detections);
+  }
+
+  const candidates = resolveInstallTargets(detections);
+
+  // Sans terminal (CI, pipe) ou avec --yes : on applique le défaut détecté.
+  if (options.yes || !isInteractive() || candidates.length <= 1) {
+    return candidates;
+  }
+
+  console.log(`${colors.cyan}🤖 Assistants IA détectés :${colors.reset}`);
+  const choices = candidates.map(d => ({
+    label: `${d.target.name} ${colors.dim}→ ${d.target.describe}${colors.reset}`,
+    hint: d.detected ? `${colors.dim}(${d.reasons.join(', ')})${colors.reset}` : '',
+    selected: true
+  }));
+
+  const picked = await multiSelect('Où installer les compétences ?', choices);
+  return picked.map(i => candidates[i]);
+}
+
+/**
+ * Installe les Skills d'un dépôt dans les assistants IA choisis.
+ *
+ * @param {string} repo Dépôt GitHub, URL Git ou chemin local.
+ * @param {object} [options]
+ * @param {string} [options.skill]    Installer une seule Skill.
+ * @param {string[]} [options.targets] Identifiants de cibles explicites.
+ * @param {boolean} [options.all]     Toutes les cibles détectées.
+ * @param {boolean} [options.user]    Installation utilisateur au lieu du projet.
+ * @param {boolean} [options.yes]     Aucune question interactive.
+ * @param {boolean} [options.quiet]   Réduire la sortie (utilisé par `update`).
+ */
 async function install(repo, options = {}) {
   const targetSkillName = options.skill;
+  const cwd = options.cwd || process.cwd();
+  const home = options.home || os.homedir();
 
   if (targetSkillName && !isValidSkillName(targetSkillName)) {
     throw new Error(
@@ -18,27 +143,31 @@ async function install(repo, options = {}) {
     );
   }
 
+  const log = options.quiet ? () => {} : (...args) => console.log(...args);
+
   const source = resolveSource(repo, {
     onProgress: event => {
-      const [kind, url] = [event.slice(0, event.indexOf(':')), event.slice(event.indexOf(':') + 1)];
+      const separator = event.indexOf(':');
+      const kind = event.slice(0, separator);
+      const url = event.slice(separator + 1);
       if (kind === 'local') {
-        console.log(`${colors.cyan}🔍 Recherche de compétences locales dans : ${colors.bright}${url}${colors.reset}`);
+        log(`${colors.cyan}🔍 Recherche de compétences locales dans : ${colors.bright}${url}${colors.reset}`);
       } else {
-        console.log(`${colors.cyan}📥 Téléchargement du dépôt : ${colors.bright}${url}${colors.reset}...`);
+        log(`${colors.cyan}📥 Téléchargement du dépôt : ${colors.bright}${url}${colors.reset}...`);
       }
     }
   });
 
   try {
     const { skills: allSkills } = collectSkills(source.sourceDir, message =>
-      console.log(`${colors.yellow}⚠️ ${message}${colors.reset}`)
+      log(`${colors.yellow}⚠️ ${message}${colors.reset}`)
     );
 
     if (allSkills.length === 0) {
-      console.log(
+      log(
         `\n${colors.yellow}⚠️ Aucune compétence valide (contenant un fichier SKILL.md) n'a été trouvée dans le dépôt.${colors.reset}`
       );
-      return;
+      return { installed: [], targets: [] };
     }
 
     let skillsToInstall;
@@ -52,41 +181,70 @@ async function install(repo, options = {}) {
       skillsToInstall = allSkills;
     }
 
-    console.log(`${colors.cyan}⚙️ Installation des compétences...${colors.reset}\n`);
-
-    const destBaseDir = path.resolve(process.cwd(), '.agents', 'skills');
-    if (!fs.existsSync(destBaseDir)) {
-      fs.mkdirSync(destBaseDir, { recursive: true });
+    const chosen = await chooseTargets(options, { cwd, home });
+    if (chosen.length === 0) {
+      log(`\n${colors.yellow}⚠️ Aucune cible sélectionnée : rien n'a été installé.${colors.reset}`);
+      return { installed: [], targets: [] };
     }
 
-    for (const skill of skillsToInstall) {
-      if (!isValidSkillName(skill.name)) {
-        console.log(`${colors.yellow}⚠️ Compétence avec nom non valide ignorée : ${skill.name}${colors.reset}`);
-        continue;
+    log(`\n${colors.cyan}⚙️ Installation des compétences...${colors.reset}`);
+
+    const installed = [];
+    const scopeRoot = options.user ? home : cwd;
+
+    for (const detection of chosen) {
+      const target = detection.target;
+      log(`\n${colors.bright}${target.name}${colors.reset} ${colors.dim}(${target.describe})${colors.reset}`);
+
+      const namesForBlock = [];
+      for (const skill of skillsToInstall) {
+        if (!isValidSkillName(skill.name)) {
+          log(`  ${colors.yellow}⚠️ Compétence avec nom non valide ignorée : ${skill.name}${colors.reset}`);
+          continue;
+        }
+
+        const written = installSkillTo(skill, detection, { cwd, home, user: options.user });
+        namesForBlock.push(skill.name);
+        const meta = readSkillMetadata(skill);
+        installed.push({ name: skill.name, version: meta.version || '', target: target.id });
+
+        log(
+          `  ${colors.green}✓${colors.reset} ${colors.bright}${skill.name}${colors.reset} -> ${colors.dim}${path.relative(scopeRoot, written) || written}${colors.reset}`
+        );
       }
 
-      const destDir = path.resolve(destBaseDir, skill.name);
+      if (target.layout === 'managed-block' && namesForBlock.length > 0) {
+        // Le bloc doit lister toutes les Skills présentes, pas seulement
+        // celles de cette exécution.
+        const skillsRoot = path.resolve(scopeRoot, '.agents', 'skills');
+        const present = fs.existsSync(skillsRoot)
+          ? fs.readdirSync(skillsRoot, { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name)
+          : namesForBlock;
 
-      // Confinement strict : le nom est déjà validé, ce contrôle reste
-      // la dernière barrière contre un path traversal.
-      if (!destDir.startsWith(destBaseDir + path.sep)) {
-        throw new Error(`Tentative de path traversal détectée pour la compétence : "${skill.name}"`);
+        const contextFile = writeManagedBlock(path.resolve(scopeRoot, target.contextFile), present);
+        log(`  ${colors.green}✓${colors.reset} bloc géré mis à jour dans ${colors.dim}${path.basename(contextFile)}${colors.reset}`);
       }
+    }
 
-      if (fs.existsSync(destDir)) {
-        fs.rmSync(destDir, { recursive: true, force: true });
-      }
-      fs.mkdirSync(destDir, { recursive: true });
-      fs.cpSync(skill.path, destDir, { recursive: true });
+    const uniqueSkills = [...new Map(installed.map(s => [s.name, { name: s.name, version: s.version }])).values()];
 
-      console.log(
-        `  ${colors.green}✓${colors.reset} ${colors.bright}${skill.name}${colors.reset} -> ${colors.dim}.agents/skills/${skill.name}/${colors.reset}`
+    if (uniqueSkills.length > 0 && options.record !== false) {
+      recordInstall(
+        {
+          repo,
+          targets: chosen.map(d => d.target.id),
+          user: Boolean(options.user),
+          skills: uniqueSkills
+        },
+        scopeRoot
       );
     }
 
-    console.log(
-      `\n${colors.green}${colors.bright}🎉 Installation réussie de ${skillsToInstall.length} compétence(s) !${colors.reset}`
+    log(
+      `\n${colors.green}${colors.bright}🎉 ${uniqueSkills.length} compétence(s) installée(s) dans ${chosen.length} cible(s) !${colors.reset}`
     );
+
+    return { installed, targets: chosen.map(d => d.target.id), skills: uniqueSkills };
   } finally {
     source.cleanup();
   }
@@ -94,7 +252,10 @@ async function install(repo, options = {}) {
 
 module.exports = {
   install,
+  installSkillTo,
+  chooseTargets,
   getRepoDetails,
   scanDirectoryForSkills,
-  isValidSkillName
+  isValidSkillName,
+  getTarget
 };

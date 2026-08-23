@@ -89,6 +89,23 @@
       ]
     },
     {
+      "name": "prd-table-ronde",
+      "category": "business",
+      "path": "skills/business/prd-table-ronde/SKILL.md",
+      "author": "KxlSys",
+      "version": "2.1.1",
+      "description": "Transforme une idée, un brief client, une URL, une capture, un flyer, un logo ou un document en produit numérique cadré et constructible par une table ronde d'experts dimensionnée. À utiliser pour équipe virtuelle, table ronde, PRD, cahier des charges, blueprint produit, conception ou audit d'application/webapp/SaaS/outil métier, analyse d'un besoin client, architecture et choix de stack, roadmap, sécurité, critères d'acceptation, fichiers piliers ou fichiers agents pour lancer/transmettre le développement. Ne pas l'utiliser pour une question technique ponctuelle ou une simple reformulation. Le contenu canonique reste indépendant du format de livraison: Markdown, HTML riche ou fichiers projet.",
+      "tags": [
+        "business",
+        "product",
+        "prd",
+        "cahier-des-charges",
+        "architecture",
+        "roadmap",
+        "design"
+      ]
+    },
+    {
       "name": "prompt-engineering",
       "category": "ai",
       "path": "skills/ai/prompt-engineering/SKILL.md",
