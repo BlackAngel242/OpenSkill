@@ -382,12 +382,10 @@ MIT License
 
 ### Phase 2
 - [x] Développement du CLI OpenSkill
-- [x] Préparation de la publication NPM (paquet `@kxlsys/openskill`)
-- [ ] Première publication sur NPM
 - [x] Support GitHub Repository Import
+- [x] Paquet prêt à publier (`@kxlsys/openskill`, `npm run release`)
 
 ### Phase 3
-- [x] Installation via NPX (nom scopé `@kxlsys/openskill`)
 - [x] Recherche de Skills (`openskill search`)
 - [x] Mise à jour automatique (`openskill update`)
 - [x] Vérification des Skills (`openskill validate`)
@@ -398,7 +396,9 @@ MIT License
 - [x] Mise à jour groupée des Skills et du CLI
 - [x] Conformité au standard Agent Skills (agentskills.io)
 - [x] Support des harnais Hermes, OpenCode, MiMo Code, OpenClaw
-- [ ] Publication du CLI sur NPM (`npm run release`)
+
+### Reste à faire
+- [ ] **Publier le paquet sur NPM** — nécessite un compte NPM `kxlsys` ; débloque l'installation par `npx @kxlsys/openskill`, aujourd'hui possible uniquement par clone du dépôt
 
 ---
 
