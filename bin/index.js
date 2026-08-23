@@ -49,7 +49,7 @@ ${colors.bright}OPTIONS:${colors.reset}
   -v, --version           Affiche la version du CLI
 
 ${colors.bright}CIBLES SUPPORTÉES:${colors.reset}
-${TARGETS.map(t => `  ${t.id.padEnd(14)} ${t.name.padEnd(24)} ${colors.dim}${t.describe}${colors.reset}`).join('\n')}
+${TARGETS.map(t => `  ${t.id.padEnd(13)} ${t.name.padEnd(28)} ${colors.dim}${t.describe}${colors.reset}`).join('\n')}
 
 ${colors.bright}EXEMPLES:${colors.reset}
   npx @kxlsys/openskill detect
@@ -137,6 +137,12 @@ function commandDetect() {
       : `${colors.dim}${detection.target.name}${colors.reset}`;
     const reasons = detection.detected ? ` ${colors.dim}— ${detection.reasons.join(', ')}${colors.reset}` : '';
     console.log(`  ${mark} ${name} ${colors.dim}(${detection.target.id})${colors.reset}${reasons}`);
+
+    // Une même destination sert souvent plusieurs harnais : le dire évite
+    // d'installer trois fois la même chose.
+    if (detection.target.serves && detection.target.serves.length > 1) {
+      console.log(`      ${colors.dim}lu par : ${detection.target.serves.join(', ')}${colors.reset}`);
+    }
   }
 
   if (detected.length === 0) {

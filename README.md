@@ -116,6 +116,38 @@ Lorsque l'utilisateur fournit un email :
 
 ---
 
+## 🧩 Standard Agent Skills
+
+OpenSkill suit le [standard ouvert Agent Skills](https://agentskills.io/specification) : une Skill est un dossier contenant un `SKILL.md` à frontmatter YAML, avec des sous-dossiers optionnels `references/`, `scripts/` et `assets/`.
+
+Les contraintes du standard sont vérifiées par `openskill validate` :
+
+| Champ | Statut | Contrainte |
+| --- | --- | --- |
+| `name` | requis (standard) | 64 caractères max, minuscules, chiffres et tirets, sans tiret initial, final ou doublé ; identique au nom du dossier |
+| `description` | requis (standard) | 1024 caractères max ; dit ce que fait la Skill **et** quand l'utiliser |
+| `license` | optionnel (standard) | — |
+| `version`, `author`, `tags` | requis dans ce dépôt | acceptés à plat ou sous `metadata:` |
+
+Les deux écritures sont donc valides :
+
+```yaml
+# Forme à plat
+name: ma-skill
+author: VotrePseudo
+version: 1.0.0
+```
+
+```yaml
+# Forme canonique du standard
+name: ma-skill
+metadata:
+  author: VotrePseudo
+  version: "1.0.0"
+```
+
+---
+
 ## 📦 Utilisation du CLI
 
 ### Détecter vos assistants IA
@@ -143,18 +175,23 @@ npx @kxlsys/openskill add ./mon-depot-local
 
 ### Assistants supportés
 
-| Cible | Assistant | Destination |
+| Cible | Destination | Harnais servis |
 | --- | --- | --- |
-| `claude-code` | Claude Code | `.claude/skills/<nom>/SKILL.md` |
-| `cursor` | Cursor | `.cursor/rules/<nom>.mdc` |
-| `windsurf` | Windsurf | `.windsurf/rules/<nom>.md` |
-| `copilot` | GitHub Copilot | `.github/instructions/<nom>.instructions.md` |
-| `cline` | Cline | `.clinerules/<nom>.md` |
-| `continue` | Continue | `.continue/rules/<nom>.md` |
-| `codex` | Codex | `AGENTS.md` (bloc géré) + `.agents/skills/` |
-| `gemini` | Gemini CLI | `GEMINI.md` (bloc géré) + `.agents/skills/` |
-| `aider` | Aider | `CONVENTIONS.md` (bloc géré) + `.agents/skills/` |
-| `agents` | Générique | `.agents/skills/<nom>/` |
+| `claude-code` | `.claude/skills/<nom>/SKILL.md` | Claude Code, OpenCode, MiMo Code |
+| `agents` | `.agents/skills/<nom>/SKILL.md` | OpenCode, Hermes Agent, OpenClaw, MiMo Code |
+| `agents-md` | `AGENTS.md` (bloc géré) + `.agents/skills/` | Codex, OpenCode, Jules, Factory, goose, Zed, Warp, Devin, Junie, Amp, RooCode, Kilo Code |
+| `hermes` | `.hermes/skills/<nom>/SKILL.md` | Hermes Agent (Nous Research) |
+| `opencode` | `.opencode/skills/<nom>/SKILL.md` | OpenCode |
+| `mimo` | `.mimocode/skills/<nom>/SKILL.md` | MiMo Code (Xiaomi) |
+| `cursor` | `.cursor/rules/<nom>.mdc` | Cursor |
+| `windsurf` | `.windsurf/rules/<nom>.md` | Windsurf |
+| `copilot` | `.github/instructions/<nom>.instructions.md` | GitHub Copilot |
+| `cline` | `.clinerules/<nom>.md` | Cline |
+| `continue` | `.continue/rules/<nom>.md` | Continue |
+| `gemini` | `GEMINI.md` (bloc géré) + `.agents/skills/` | Gemini CLI |
+| `aider` | `CONVENTIONS.md` (bloc géré) + `.agents/skills/` | Aider |
+
+Une destination sert souvent plusieurs harnais : `.agents/skills/` est la convention inter-outils, et `AGENTS.md` est lu par une trentaine d'agents. Installer dans ces deux cibles couvre donc l'essentiel de l'écosystème sans multiplier les copies. `openskill detect` indique pour chaque cible détectée qui la lit.
 
 Trois modes de pose :
 
@@ -359,6 +396,8 @@ MIT License
 - [x] Détection automatique des assistants IA (`openskill detect`)
 - [x] Installation multi-assistants avec conversion de format
 - [x] Mise à jour groupée des Skills et du CLI
+- [x] Conformité au standard Agent Skills (agentskills.io)
+- [x] Support des harnais Hermes, OpenCode, MiMo Code, OpenClaw
 - [ ] Publication du CLI sur NPM (`npm run release`)
 
 ---

@@ -88,7 +88,10 @@ async function chooseTargets(options, { cwd, home }) {
 
   if (options.targets && options.targets.length > 0) {
     return options.targets.map(id => {
-      const found = detections.find(d => d.target.id === id);
+      // getTarget résout aussi les alias : un manifeste écrit avant un
+      // renommage de cible doit continuer à fonctionner.
+      const resolved = getTarget(id);
+      const found = resolved ? detections.find(d => d.target.id === resolved.id) : null;
       if (!found) {
         const available = detections.map(d => d.target.id).join(', ');
         throw new Error(`Cible inconnue : "${id}". Cibles disponibles : ${available}.`);

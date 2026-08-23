@@ -41,7 +41,38 @@ const TARGETS = [
     projectDir: path.join('.claude', 'skills'),
     userDir: path.join('.claude', 'skills'),
     markers: { project: ['.claude'], user: ['.claude'], bin: ['claude'] },
-    describe: '.claude/skills/<nom>/SKILL.md'
+    describe: '.claude/skills/<nom>/SKILL.md',
+    serves: ['Claude Code', 'OpenCode', 'MiMo Code']
+  },
+  {
+    id: 'hermes',
+    name: 'Hermes Agent',
+    layout: 'directory',
+    projectDir: path.join('.hermes', 'skills'),
+    userDir: path.join('.hermes', 'skills'),
+    markers: { project: ['.hermes'], user: ['.hermes'], bin: ['hermes'] },
+    describe: '.hermes/skills/<nom>/SKILL.md',
+    serves: ['Hermes Agent (Nous Research)']
+  },
+  {
+    id: 'opencode',
+    name: 'OpenCode',
+    layout: 'directory',
+    projectDir: path.join('.opencode', 'skills'),
+    userDir: path.join('.config', 'opencode', 'skills'),
+    markers: { project: ['.opencode'], user: [path.join('.config', 'opencode'), '.opencode'], bin: ['opencode'] },
+    describe: '.opencode/skills/<nom>/SKILL.md',
+    serves: ['OpenCode']
+  },
+  {
+    id: 'mimo',
+    name: 'MiMo Code',
+    layout: 'directory',
+    projectDir: path.join('.mimocode', 'skills'),
+    userDir: path.join('.mimocode', 'skills'),
+    markers: { project: ['.mimocode'], user: ['.mimocode'], bin: ['mimo', 'mimocode'] },
+    describe: '.mimocode/skills/<nom>/SKILL.md',
+    serves: ['MiMo Code (Xiaomi)']
   },
   {
     id: 'cursor',
@@ -116,22 +147,27 @@ const TARGETS = [
   },
   {
     id: 'agents',
-    name: 'Générique (.agents)',
+    name: 'Standard Agent Skills (.agents)',
     layout: 'directory',
     projectDir: path.join('.agents', 'skills'),
     userDir: path.join('.agents', 'skills'),
-    markers: { project: ['.agents'] },
+    markers: { project: ['.agents'], user: ['.agents'] },
     describe: '.agents/skills/<nom>/SKILL.md',
-    // Cible de repli : toujours proposée, même sans indice de détection.
+    // Convention inter-outils : lue par plusieurs harnais sans configuration.
+    // Sert aussi de repli quand aucun assistant n'est détecté.
+    serves: ['OpenCode', 'Hermes Agent', 'OpenClaw', 'MiMo Code'],
     fallback: true
   },
   {
-    id: 'codex',
-    name: 'Codex (AGENTS.md)',
+    id: 'agents-md',
+    aliases: ['codex'],
+    name: 'AGENTS.md (standard)',
     layout: 'managed-block',
     contextFile: 'AGENTS.md',
     markers: { project: ['AGENTS.md', '.codex'], user: ['.codex'], bin: ['codex'] },
-    describe: 'AGENTS.md (bloc géré) + .agents/skills/'
+    describe: 'AGENTS.md (bloc géré) + .agents/skills/',
+    // AGENTS.md est lu par une trentaine d'agents : un seul bloc les sert tous.
+    serves: ['Codex', 'OpenCode', 'Jules', 'Factory', 'goose', 'Zed', 'Warp', 'Devin', 'Junie', 'Amp', 'RooCode', 'Kilo Code']
   },
   {
     id: 'gemini',
@@ -139,7 +175,8 @@ const TARGETS = [
     layout: 'managed-block',
     contextFile: 'GEMINI.md',
     markers: { project: ['GEMINI.md', '.gemini'], user: ['.gemini'], bin: ['gemini'] },
-    describe: 'GEMINI.md (bloc géré) + .agents/skills/'
+    describe: 'GEMINI.md (bloc géré) + .agents/skills/',
+    serves: ['Gemini CLI']
   },
   {
     id: 'aider',
@@ -147,12 +184,17 @@ const TARGETS = [
     layout: 'managed-block',
     contextFile: 'CONVENTIONS.md',
     markers: { project: ['CONVENTIONS.md', '.aider.conf.yml'], user: ['.aider.conf.yml'], bin: ['aider'] },
-    describe: 'CONVENTIONS.md (bloc géré) + .agents/skills/'
+    describe: 'CONVENTIONS.md (bloc géré) + .agents/skills/',
+    serves: ['Aider']
   }
 ];
 
 function getTarget(id) {
-  return TARGETS.find(t => t.id === id) || null;
+  return (
+    TARGETS.find(t => t.id === id) ||
+    TARGETS.find(t => (t.aliases || []).includes(id)) ||
+    null
+  );
 }
 
 function existsAny(base, entries = []) {

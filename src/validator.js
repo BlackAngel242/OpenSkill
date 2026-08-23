@@ -7,8 +7,14 @@ const {
   readSkillMetadata
 } = require('./catalog');
 
-const REQUIRED_FIELDS = ['name', 'version', 'author', 'description', 'tags'];
+// Le standard Agent Skills (agentskills.io) n'exige que `name` et
+// `description`. Le dépôt OpenSkill demande en plus auteur, version et tags
+// pour alimenter le registre et la recherche.
+const SPEC_REQUIRED_FIELDS = ['name', 'description'];
+const LIBRARY_REQUIRED_FIELDS = ['version', 'author', 'tags'];
 const SEMVER_REGEX = /^\d+\.\d+\.\d+$/;
+const MAX_NAME_LENGTH = 64;
+const MAX_DESCRIPTION_LENGTH = 1024;
 
 function relative(root, target) {
   return path.relative(root, target).split(path.sep).join('/');
@@ -29,11 +35,19 @@ function validateSkill(skill, root) {
     return { errors, warnings };
   }
 
-  for (const field of REQUIRED_FIELDS) {
-    const value = meta.frontmatter[field];
-    const missing = value === undefined || value === null || value === '' ||
-      (Array.isArray(value) && value.length === 0);
-    if (missing) {
+  const isMissing = value =>
+    value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
+
+  for (const field of SPEC_REQUIRED_FIELDS) {
+    if (isMissing(meta.frontmatter[field])) {
+      errors.push(`${location} : champ obligatoire "${field}" manquant ou vide (standard Agent Skills).`);
+    }
+  }
+
+  // Ces champs sont acceptés à plat ou sous `metadata`, comme le prévoit
+  // le standard pour les métadonnées libres.
+  for (const field of LIBRARY_REQUIRED_FIELDS) {
+    if (isMissing(meta.frontmatter[field]) && isMissing(meta[field])) {
       errors.push(`${location} : champ obligatoire "${field}" manquant ou vide.`);
     }
   }
@@ -47,24 +61,30 @@ function validateSkill(skill, root) {
 
   if (meta.frontmatter.name && !followsNamingConvention(meta.frontmatter.name)) {
     errors.push(
-      `${location} : le nom "${meta.frontmatter.name}" ne respecte pas la convention (minuscules, chiffres et tirets).`
+      `${location} : le nom "${meta.frontmatter.name}" ne respecte pas la convention (minuscules, chiffres et tirets, sans tiret initial, final ou doublé).`
     );
   }
 
-  if (meta.frontmatter.version && !SEMVER_REGEX.test(String(meta.frontmatter.version))) {
+  if (meta.frontmatter.name && String(meta.frontmatter.name).length > MAX_NAME_LENGTH) {
     errors.push(
-      `${location} : la version "${meta.frontmatter.version}" doit suivre le format MAJEUR.MINEUR.CORRECTIF.`
+      `${location} : le nom dépasse ${MAX_NAME_LENGTH} caractères (limite du standard Agent Skills).`
     );
+  }
+
+  if (meta.version && !SEMVER_REGEX.test(String(meta.version))) {
+    errors.push(`${location} : la version "${meta.version}" doit suivre le format MAJEUR.MINEUR.CORRECTIF.`);
   }
 
   if (meta.frontmatter.tags !== undefined && !Array.isArray(meta.frontmatter.tags)) {
     errors.push(`${location} : "tags" doit être une liste YAML.`);
   }
 
-  // La description sert aussi de condition de déclenchement pour les agents :
-  // elle est légitimement longue. Le seuil marque l'excès, pas le détail.
-  if (meta.description && meta.description.length > 1024) {
-    warnings.push(`${location} : description très longue (${meta.description.length} caractères).`);
+  // La description sert de condition de déclenchement : elle est
+  // légitimement longue, mais le standard la plafonne à 1024 caractères.
+  if (meta.description && meta.description.length > MAX_DESCRIPTION_LENGTH) {
+    errors.push(
+      `${location} : description de ${meta.description.length} caractères, au-delà de la limite de ${MAX_DESCRIPTION_LENGTH} du standard Agent Skills.`
+    );
   }
 
   return { errors, warnings };

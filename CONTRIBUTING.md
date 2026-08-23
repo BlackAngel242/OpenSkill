@@ -57,6 +57,8 @@ Uniquement des minuscules, des chiffres et des tirets simples :
 | `phishing-analysis` | `phishing_analysis` |
 | `ad-audit` | `-ad-audit` / `ad--audit` |
 
+Cette structure est celle du [standard ouvert Agent Skills](https://agentskills.io/specification) : les sous-dossiers `references/`, `scripts/` et `assets/` sont chargés à la demande par les agents.
+
 ### Frontmatter obligatoire
 
 Chaque `SKILL.md` commence par un bloc YAML contenant les champs suivants, tous obligatoires :
@@ -71,6 +73,14 @@ tags:                       # au moins un tag
   - categorie
   - mot-cle
 ---
+```
+
+Le standard n'exige que `name` et `description` ; ce dépôt demande en plus l'auteur, la version et les tags pour alimenter le registre et la recherche. Ces trois champs sont acceptés à plat ou sous `metadata:`, la forme canonique du standard :
+
+```yaml
+metadata:
+  author: VotrePseudo
+  version: "1.0.0"
 ```
 
 La description sert aussi de condition de déclenchement pour les agents : dites ce que fait la Skill **et** quand l'utiliser. Elle peut être longue, auquel cas un scalaire YAML replié est accepté :

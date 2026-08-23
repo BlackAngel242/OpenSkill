@@ -59,6 +59,23 @@ run(() => {
 
   assert.strictEqual(parseFrontmatter('# Pas de frontmatter'), null);
   assert.strictEqual(parseFrontmatter(null), null);
+
+  // Scalaire replié : forme courante des descriptions longues.
+  const folded = parseFrontmatter(
+    ['---', 'name: x', 'description: >', '  Première ligne', '  suite du paragraphe.', '', '  Second paragraphe.', '---'].join('\n')
+  );
+  assert.strictEqual(folded.description, 'Première ligne suite du paragraphe.\nSecond paragraphe.');
+
+  // Scalaire littéral : les retours à la ligne sont conservés.
+  const literal = parseFrontmatter(['---', 'name: x', 'note: |', '  ligne1', '  ligne2', '---'].join('\n'));
+  assert.strictEqual(literal.note, 'ligne1\nligne2');
+
+  // Map imbriquée : forme canonique du standard Agent Skills.
+  const nested = parseFrontmatter(
+    ['---', 'name: x', 'metadata:', '  author: example-org', '  version: "1.0"', 'tags:', '  - a', '---'].join('\n')
+  );
+  assert.deepStrictEqual(nested.metadata, { author: 'example-org', version: '1.0' });
+  assert.deepStrictEqual(nested.tags, ['a']);
 }, 'Test 1: parseFrontmatter');
 
 // Test 2: naming convention (README: a-z, 0-9, -)

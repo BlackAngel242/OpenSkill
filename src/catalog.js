@@ -132,12 +132,17 @@ function readSkillMetadata(skill) {
 
   const tags = Array.isArray(meta && meta.tags) ? meta.tags : [];
 
+  // Le standard Agent Skills range les champs libres sous `metadata`.
+  // La forme à plat reste acceptée : les deux coexistent dans la nature.
+  const extra = (meta && typeof meta.metadata === 'object' && !Array.isArray(meta.metadata)) ? meta.metadata : {};
+
   return {
     ...skill,
-    category: skill.category || (meta && meta.category) || null,
+    category: skill.category || (meta && meta.category) || extra.category || null,
     description: (meta && meta.description) || '',
-    version: (meta && meta.version) || '',
-    author: (meta && meta.author) || '',
+    version: (meta && meta.version) || extra.version || '',
+    author: (meta && meta.author) || extra.author || '',
+    license: (meta && meta.license) || '',
     tags,
     frontmatter: meta
   };

@@ -60,6 +60,18 @@ run(() => {
     const detected = detections.filter(d => d.detected).map(d => d.target.id).sort();
     assert.deepStrictEqual(detected, ['claude-code', 'cline', 'cursor']);
 
+    // Les harnais conformes au standard Agent Skills sont reconnus.
+    const hermesProject = tempDir();
+    fs.mkdirSync(path.join(hermesProject, '.hermes'));
+    fs.mkdirSync(path.join(hermesProject, '.opencode'));
+    fs.mkdirSync(path.join(hermesProject, '.mimocode'));
+    const standard = detectTargets({ cwd: hermesProject, home: tempDir(), checkPath: false })
+      .filter(d => d.detected)
+      .map(d => d.target.id)
+      .sort();
+    assert.deepStrictEqual(standard, ['hermes', 'mimo', 'opencode']);
+    fs.rmSync(hermesProject, { recursive: true, force: true });
+
     const cursor = detections.find(d => d.target.id === 'cursor');
     assert.ok(cursor.reasons.some(r => r.startsWith('projet:')));
 
@@ -321,12 +333,73 @@ runAsync(async () => {
   }
 }, 'Test 7: multi-file skill on file target');
 
-// Test 8: comparaison de versions
+// Test 8: conformité au standard Agent Skills
+runAsync(async () => {
+  const project = tempDir();
+  const home = tempDir();
+  try {
+    // Destinations des harnais conformes.
+    assert.strictEqual(
+      destinationFor(getTarget('hermes'), 'ma-skill', { cwd: '/p', home: '/h', user: true }),
+      path.resolve('/h/.hermes/skills/ma-skill')
+    );
+    assert.strictEqual(
+      destinationFor(getTarget('opencode'), 'ma-skill', { cwd: '/p', home: '/h', user: true }),
+      path.resolve('/h/.config/opencode/skills/ma-skill')
+    );
+    assert.strictEqual(
+      destinationFor(getTarget('mimo'), 'ma-skill', { cwd: '/p', home: '/h' }),
+      path.resolve('/p/.mimocode/skills/ma-skill')
+    );
+
+    // L'ancien identifiant `codex` reste résolu après le renommage en
+    // `agents-md` : un manifeste déjà écrit doit continuer à fonctionner.
+    assert.strictEqual(getTarget('codex').id, 'agents-md');
+
+    await install(ROOT, {
+      skill: 'openpua',
+      targets: ['codex'],
+      cwd: project,
+      home,
+      yes: true,
+      quiet: true,
+      checkPath: false
+    });
+    assert.ok(fs.readFileSync(path.join(project, 'AGENTS.md'), 'utf8').includes('openpua'));
+
+    // Une Skill au format canonique du standard (metadata.*) est installable.
+    const specRepo = tempDir('openskill-spec-');
+    const specDir = path.join(specRepo, 'skills', 'demo', 'spec-skill');
+    fs.mkdirSync(specDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(specDir, 'SKILL.md'),
+      ['---', 'name: spec-skill', 'description: Fait X. À utiliser quand Y.', 'license: MIT', 'metadata:', '  author: Tester', '  version: 1.2.3', '---', '', '# Spec', ''].join('\n'),
+      'utf8'
+    );
+
+    const result = await install(specRepo, {
+      targets: ['hermes'],
+      cwd: project,
+      home,
+      yes: true,
+      quiet: true,
+      checkPath: false
+    });
+    assert.deepStrictEqual(result.skills, [{ name: 'spec-skill', version: '1.2.3' }]);
+    assert.ok(fs.existsSync(path.join(project, '.hermes', 'skills', 'spec-skill', 'SKILL.md')));
+    fs.rmSync(specRepo, { recursive: true, force: true });
+  } finally {
+    fs.rmSync(project, { recursive: true, force: true });
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+}, 'Test 8: Agent Skills standard compliance');
+
+// Test 9: comparaison de versions
 run(() => {
   assert.ok(compareVersions('1.10.0', '1.9.0') > 0, '1.10.0 > 1.9.0');
   assert.ok(compareVersions('2.0.0', '10.0.0') < 0);
   assert.strictEqual(compareVersions('1.1.0', '1.1.0'), 0);
   assert.ok(compareVersions('1.1', '1.1.0') === 0);
-}, 'Test 8: version comparison');
+}, 'Test 9: version comparison');
 
 runSuite();

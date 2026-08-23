@@ -71,6 +71,7 @@ function parseFrontmatter(content) {
   const result = {};
   const lines = match[1].split(/\r?\n/);
   let currentListKey = null;
+  let currentMapKey = null;
 
   for (let i = 0; i < lines.length; i += 1) {
     const rawLine = lines[i];
@@ -79,6 +80,14 @@ function parseFrontmatter(content) {
     const listItem = rawLine.match(/^\s+-\s+(.*)$/);
     if (listItem && currentListKey) {
       result[currentListKey].push(stripQuotes(listItem[1].trim()));
+      continue;
+    }
+
+    // Map imbriquée sur un niveau : le standard Agent Skills range les
+    // métadonnées libres (author, version...) sous la clé `metadata`.
+    const nested = rawLine.match(/^\s+([A-Za-z0-9_-]+):\s*(.*)$/);
+    if (nested && currentMapKey) {
+      result[currentMapKey][nested[1]] = stripQuotes(nested[2].trim());
       continue;
     }
 
@@ -100,16 +109,31 @@ function parseFrontmatter(content) {
       }
       result[key] = joinBlockScalar(block, blockScalar[1], blockScalar[2]);
       currentListKey = null;
+      currentMapKey = null;
       i = j - 1;
       continue;
     }
 
     if (value === '') {
-      // Une clé sans valeur inline introduit une liste.
-      currentListKey = key;
-      result[key] = [];
+      // Une clé sans valeur inline introduit une liste ou une map : le type
+      // se décide sur la première ligne indentée qui suit.
+      const next = lines.slice(i + 1).find(l => l.trim() !== '');
+      if (next && /^\s+-\s+/.test(next)) {
+        currentListKey = key;
+        currentMapKey = null;
+        result[key] = [];
+      } else if (next && /^\s+[A-Za-z0-9_-]+:/.test(next)) {
+        currentMapKey = key;
+        currentListKey = null;
+        result[key] = {};
+      } else {
+        currentListKey = key;
+        currentMapKey = null;
+        result[key] = [];
+      }
     } else {
       currentListKey = null;
+      currentMapKey = null;
       result[key] = stripQuotes(value);
     }
   }
