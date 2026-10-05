@@ -1,21 +1,50 @@
 {
-  "name": "openskill",
-  "version": "1.0.0",
-  "description": "CLI to install AI agent skills from OpenSkill repositories",
+  "name": "@kxlsys/openskill",
+  "version": "2.0.0",
+  "description": "CLI to install, update, search and validate AI agent skills across Claude Code, Cursor, Copilot and more",
   "main": "bin/index.js",
   "type": "commonjs",
   "bin": {
     "openskill": "./bin/index.js"
   },
   "scripts": {
-    "test": "node test/test.js"
+    "test": "node test/test.js && node test/test-quality.js && node test/test-targets.js",
+    "validate": "node bin/index.js validate .",
+    "release": "npm publish --access public"
   },
   "keywords": [
     "ai",
     "agent",
     "skills",
-    "openskills"
+    "openskill",
+    "claude-code",
+    "cursor",
+    "copilot",
+    "windsurf",
+    "cline",
+    "prompt",
+    "cli"
   ],
   "author": "KxlSys",
-  "license": "MIT"
+  "license": "MIT",
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BlackAngel242/OpenSkill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BlackAngel242/OpenSkill/issues"
+  },
+  "homepage": "https://github.com/BlackAngel242/OpenSkill#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }
